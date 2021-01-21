@@ -1,3 +1,12 @@
-code/data/SPs/*.pkl
-
+*__pycache__*
+# Ignore large dataset
+code/data/SPS/*.pkl
+code/data/CSL/*.pkl
+# ide
 .idea
+# output
+out
+
+*.zip
+
+*.pt

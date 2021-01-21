@@ -138,7 +138,7 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
 
     if MODEL_NAME in ['RingGNN', '3WLGNN']:
         # import train functions specific for WL-GNNs
-        from train.train_superpixels_graph_classification import train_epoch_dense as train_epoch, evaluate_network_dense as evaluate_network
+        from train.train_SPs_graph_classification import train_epoch_dense as train_epoch, evaluate_network_dense as evaluate_network
 
         train_loader = DataLoader(trainset, shuffle=True, collate_fn=dataset.collate_dense_gnn)
         val_loader = DataLoader(valset, shuffle=False, collate_fn=dataset.collate_dense_gnn)
@@ -146,7 +146,7 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
 
     else:
         # import train functions for all other GCNs
-        from train.train_superpixels_graph_classification import train_epoch_sparse as train_epoch, evaluate_network_sparse as evaluate_network
+        from train.train_SPs_graph_classification import train_epoch_sparse as train_epoch, evaluate_network_sparse as evaluate_network
 
         train_loader = DataLoader(trainset, batch_size=params['batch_size'], shuffle=True, drop_last=drop_last, collate_fn=dataset.collate)
         val_loader = DataLoader(valset, batch_size=params['batch_size'], shuffle=False, drop_last=drop_last, collate_fn=dataset.collate)

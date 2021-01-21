@@ -13,6 +13,7 @@ from dgl.data import LegacyTUDataset
 
 
 import random
+
 random.seed(42)
 
 from sklearn.model_selection import StratifiedKFold, train_test_split
@@ -30,7 +31,7 @@ def get_all_split_idx(dataset):
         - Preparing 10 such combinations of indexes split to be used in Graph NNs
         - As with KFold, each of the 10 fold have unique test set.
     """
-    root_idx_dir = './data/TUs/'
+    root_idx_dir = './code/data/TUs/'
     if not os.path.exists(root_idx_dir):
         os.makedirs(root_idx_dir)
     all_idx = {}

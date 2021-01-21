@@ -211,11 +211,11 @@ class SuperPixDatasetDGL(torch.utils.data.Dataset):
         else:
             print('Adj matrix defined from super-pixel locations (only)')
         use_coord = True
-        self.test = SuperPixDGL("./data/superpixels", dataset=self.name, split='test', 
+        self.test = SuperPixDGL("./data/SPS", dataset=self.name, split='test',
                             use_mean_px=use_mean_px, 
                             use_coord=use_coord)
 
-        self.train_ = SuperPixDGL("./data/superpixels", dataset=self.name, split='train', 
+        self.train_ = SuperPixDGL("./data/SPS", dataset=self.name, split='train',
                              use_mean_px=use_mean_px, 
                              use_coord=use_coord)
 
@@ -265,7 +265,8 @@ class SuperPixDataset(torch.utils.data.Dataset):
         start = time.time()
         print("[I] Loading dataset %s..." % (name))
         self.name = name
-        data_dir = 'code/data/SPs/'
+
+        data_dir = 'code/data/SPS/'
         with open(data_dir+name+'.pkl',"rb") as f:
             f = pickle.load(f)
             self.train = f[0]

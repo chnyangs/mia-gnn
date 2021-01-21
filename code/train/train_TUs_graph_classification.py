@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import math
 
-from metrics import accuracy_TU as accuracy
+from train.metrics import accuracy_TU as accuracy
 
 """
     For GCNs

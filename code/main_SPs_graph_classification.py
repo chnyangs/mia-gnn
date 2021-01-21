@@ -143,15 +143,15 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
     t_epoch_train_losses, t_epoch_val_losses, s_epoch_train_losses, s_epoch_val_losses = [], [], [], []
     t_epoch_train_accs, t_epoch_val_accs, s_epoch_train_accs, s_epoch_val_accs = [], [], [], []
 
-    # batching exception for Diffpool
-    drop_last = True if MODEL_NAME == 'DiffPool' else False
+
 
     # split dataset into half: target & shadow
     target_train_set, shadow_train_set = random_split(trainset, [len(trainset) // 2, len(trainset) - len(trainset) // 2])
-    print("target_train_set and shadow_train_set size are:{} and {}".format(len(target_train_set), len(shadow_train_set)))
     target_val_set, shadow_val_set = random_split(valset, [len(valset) // 2, len(valset) - len(valset) // 2])
     target_test_set, shadow_test_set = random_split(testset, [len(testset) // 2, len(testset) - len(testset) // 2])
+    print("target_train_set and shadow_train_set size are:{} and {}".format(len(target_train_set), len(shadow_train_set)))
 
+    # Set train, val and test data size
     train_size = params['train_size']
     val_size = params['val_size']
     test_size = params['test_size']
@@ -168,22 +168,33 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
     print('Selected Shadow Size:{}, Validation Size: {} and Testing Size:{}'.format(len(selected_S_train_set),
                                                                                       len(selected_S_val_set),
                                                                                       len(selected_S_test_set)))
+
+    # batching exception for Diffpool
+    drop_last = True if MODEL_NAME == 'DiffPool' else False
     if MODEL_NAME in ['RingGNN', '3WLGNN']:
         # import train functions specific for WL-GNNs
-        from train.train_SPs_graph_classification import train_epoch_dense as train_epoch, evaluate_network_dense as evaluate_network
+        from train.train_SPs_graph_classification import train_epoch_dense as train_epoch, \
+            evaluate_network_dense as evaluate_network
+        # Load data
+        target_train_loader = DataLoader(selected_T_train_set, shuffle=True,collate_fn=dataset.collate_dense_gnn)
+        target_val_loader = DataLoader(selected_T_val_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
+        target_test_loader = DataLoader(selected_T_test_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
 
-        # train_loader = DataLoader(trainset, shuffle=True, collate_fn=dataset.collate_dense_gnn)
-        # val_loader = DataLoader(valset, shuffle=False, collate_fn=dataset.collate_dense_gnn)
-        # test_loader = DataLoader(testset, shuffle=False, collate_fn=dataset.collate_dense_gnn)
+        shadow_train_loader = DataLoader(selected_S_train_set,  shuffle=True,collate_fn=dataset.collate_dense_gnn)
+        shadow_val_loader = DataLoader(selected_S_val_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
+        shadow_test_loader = DataLoader(selected_S_test_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
+    else:
+        # import train functions for all other GCNs
+        from train.train_SPs_graph_classification import train_epoch_sparse as train_epoch, \
+            evaluate_network_sparse as evaluate_network
+        # Load data
         target_train_loader = DataLoader(selected_T_train_set, batch_size=params['batch_size'], shuffle=True,
                                          drop_last=drop_last,
                                          collate_fn=dataset.collate)
         target_val_loader = DataLoader(selected_T_val_set, batch_size=params['batch_size'], shuffle=False,
-                                       drop_last=drop_last,
-                                       collate_fn=dataset.collate)
+                                       drop_last=drop_last,collate_fn=dataset.collate)
         target_test_loader = DataLoader(selected_T_test_set, batch_size=params['batch_size'], shuffle=False,
-                                        drop_last=drop_last,
-                                        collate_fn=dataset.collate)
+                                        drop_last=drop_last,collate_fn=dataset.collate)
 
         shadow_train_loader = DataLoader(selected_S_train_set, batch_size=params['batch_size'], shuffle=True,
                                          drop_last=drop_last,
@@ -194,27 +205,6 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
         shadow_test_loader = DataLoader(selected_S_test_set, batch_size=params['batch_size'], shuffle=False,
                                         drop_last=drop_last,
                                         collate_fn=dataset.collate)
-    else:
-        # import train functions for all other GCNs
-        from train.train_SPs_graph_classification import train_epoch_sparse as train_epoch, evaluate_network_sparse as evaluate_network
-
-        # train_loader = DataLoader(trainset, batch_size=params['batch_size'], shuffle=True, drop_last=drop_last, collate_fn=dataset.collate)
-        # val_loader = DataLoader(valset, batch_size=params['batch_size'], shuffle=False, drop_last=drop_last, collate_fn=dataset.collate)
-        # test_loader = DataLoader(testset, batch_size=params['batch_size'], shuffle=False, drop_last=drop_last, collate_fn=dataset.collate)
-
-        target_train_loader = DataLoader(selected_T_train_set, batch_size=params['batch_size'], shuffle=True, drop_last=drop_last,
-                                  collate_fn=dataset.collate)
-        target_val_loader = DataLoader(selected_T_val_set, batch_size=params['batch_size'], shuffle=False, drop_last=drop_last,
-                                collate_fn=dataset.collate)
-        target_test_loader = DataLoader(selected_T_test_set, batch_size=params['batch_size'], shuffle=False, drop_last=drop_last,
-                                 collate_fn=dataset.collate)
-
-        shadow_train_loader = DataLoader(selected_S_train_set, batch_size=params['batch_size'], shuffle=True, drop_last=drop_last,
-                                  collate_fn=dataset.collate)
-        shadow_val_loader = DataLoader(selected_S_val_set, batch_size=params['batch_size'], shuffle=False, drop_last=drop_last,
-                                collate_fn=dataset.collate)
-        shadow_test_loader = DataLoader(selected_S_test_set, batch_size=params['batch_size'], shuffle=False, drop_last=drop_last,
-                                 collate_fn=dataset.collate)
 
     # At any point you can hit Ctrl + C to break out of training early.
     print("==============Start Training Target Model==============")

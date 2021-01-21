@@ -1,7 +1,7 @@
 {
     "gpu": {
         "use": true,
-        "id": 0
+        "id": 1
     },
     
     "model": "GatedGCN",
@@ -13,9 +13,12 @@
         "seed": 41,
         "epochs": 1000,
         "batch_size": 20,
+        "train_size": 400,
+        "val_size": 50,
+        "test_size": 50,
         "init_lr": 1e-5,
         "lr_reduce_factor": 0.5,
-        "lr_schedule_patience": 25,
+        "lr_schedule_patience": 2000,
         "min_lr": 1e-6,
         "weight_decay": 0.0,
         "print_epoch_interval": 5,

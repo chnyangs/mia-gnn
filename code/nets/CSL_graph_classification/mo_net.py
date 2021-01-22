@@ -12,8 +12,8 @@ import numpy as np
     https://arxiv.org/pdf/1611.08402.pdf
 """
 
-from ...layers.gmm_layer import GMMLayer
-from ...layers.mlp_readout_layer import MLPReadout
+from layers.gmm_layer import GMMLayer
+from layers.mlp_readout_layer import MLPReadout
 
 class MoNet(nn.Module):
     def __init__(self, net_params):

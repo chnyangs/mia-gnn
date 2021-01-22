@@ -13,8 +13,8 @@ import time
     CODE adapted from https://github.com/hadarser/ProvablyPowerfulGraphNetworks_torch/
 """
 
-from ...layers.three_wl_gnn_layers import RegularBlock, MlpBlock, SkipConnection, FullyConnected, diag_offdiag_maxpool
-from ...layers.mlp_readout_layer import MLPReadout
+from layers.three_wl_gnn_layers import RegularBlock, MlpBlock, SkipConnection, FullyConnected, diag_offdiag_maxpool
+from layers.mlp_readout_layer import MLPReadout
 
 class ThreeWLGNNNet(nn.Module):
     def __init__(self, net_params):

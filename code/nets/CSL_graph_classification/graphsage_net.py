@@ -10,8 +10,8 @@ import dgl
     https://cs.stanford.edu/people/jure/pubs/graphsage-nips17.pdf
 """
 
-from ...layers.graphsage_layer import GraphSageLayer
-from ...layers.mlp_readout_layer import MLPReadout
+from layers.graphsage_layer import GraphSageLayer
+from layers.mlp_readout_layer import MLPReadout
 
 class GraphSageNet(nn.Module):
     """

@@ -3,15 +3,15 @@
     selected by the user
 """
 
-from gated_gcn_net import GatedGCNNet
-from gcn_net import GCNNet
-from gat_net import GATNet
-from graphsage_net import GraphSageNet
-from gin_net import GINNet
-from mo_net import MoNet as MoNet_
-from mlp_net import MLPNet
-from ring_gnn_net import RingGNNNet
-from three_wl_gnn_net import ThreeWLGNNNet
+from nets.CSL_graph_classification.gated_gcn_net import GatedGCNNet
+from nets.CSL_graph_classification.gcn_net import GCNNet
+from nets.CSL_graph_classification.gat_net import GATNet
+from nets.CSL_graph_classification.graphsage_net import GraphSageNet
+from nets.CSL_graph_classification.gin_net import GINNet
+from nets.CSL_graph_classification.mo_net import MoNet as MoNet_
+from nets.CSL_graph_classification.mlp_net import MLPNet
+from nets.CSL_graph_classification.ring_gnn_net import RingGNNNet
+from nets.CSL_graph_classification.three_wl_gnn_net import ThreeWLGNNNet
 
 
 def GatedGCN(net_params):

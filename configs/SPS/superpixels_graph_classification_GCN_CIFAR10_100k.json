@@ -12,7 +12,7 @@
     "params": {
         "seed": 41,
         "epochs": 1000,
-        "batch_size": 128,
+        "batch_size": 512,
         "train_size": 2500,
         "val_size": 2500,
         "test_size": 2500,

@@ -111,257 +111,232 @@ def train_val_pipeline(MODEL_NAME, DATASET_NAME, params, net_params, dirs):
     
     # At any point you can hit Ctrl + C to break out of training early.
     try:
-        for split_number in range(10):
-            t0_split = time.time()
-            log_dir = os.path.join(root_log_dir, "RUN_" + str(split_number))
-            writer = SummaryWriter(log_dir=log_dir)
+        # for split_number in range(10):
+        split_number = 0
+        t0_split = time.time()
+        log_dir = os.path.join(root_log_dir, "RUN_" + str(split_number))
+        writer = SummaryWriter(log_dir=log_dir)
 
-            # setting seeds
-            random.seed(params['seed'])
-            np.random.seed(params['seed'])
-            torch.manual_seed(params['seed'])
-            if device.type == 'cuda':
-                torch.cuda.manual_seed(params['seed'])
+        # setting seeds
+        random.seed(params['seed'])
+        np.random.seed(params['seed'])
+        torch.manual_seed(params['seed'])
+        if device.type == 'cuda':
+            torch.cuda.manual_seed(params['seed'])
 
-            print("RUN NUMBER: ", split_number)
-            trainset, valset, testset = dataset.train[split_number], dataset.val[split_number], dataset.test[split_number]
+        print("RUN NUMBER: ", split_number)
+        trainset, valset, testset = dataset.train[split_number], dataset.val[split_number], dataset.test[split_number]
 
-            target_train_set, shadow_train_set = random_split(trainset, [len(trainset) // 2,len(trainset)- len(trainset) // 2])
-            target_val_set, shadow_val_set = random_split(valset, [len(valset) // 2, len(valset) - len(valset) // 2])
-            target_test_set, shadow_test_set = random_split(testset,[len(testset) // 2, len(testset) - len(testset) // 2])
-            print("Target train set with size:{} and Shadow train set with size:{}".format(len(target_train_set), len(shadow_train_set)))
-            print("Target Val set with size:{} and Shadow Val set with size:{}".format(len(target_val_set), len(shadow_val_set)))
-            print("Target Test set with size:{} and Shadow Test set with size:{}".format(len(target_test_set), len(shadow_test_set)))
+        target_train_set, shadow_train_set = random_split(trainset, [len(trainset) // 2,len(trainset)- len(trainset) // 2])
+        target_val_set, shadow_val_set = random_split(valset, [len(valset) // 2, len(valset) - len(valset) // 2])
+        target_test_set, shadow_test_set = random_split(testset,[len(testset) // 2, len(testset) - len(testset) // 2])
+        print("Target train set with size:{} and Shadow train set with size:{}".format(len(target_train_set), len(shadow_train_set)))
+        print("Target Val set with size:{} and Shadow Val set with size:{}".format(len(target_val_set), len(shadow_val_set)))
+        print("Target Test set with size:{} and Shadow Test set with size:{}".format(len(target_test_set), len(shadow_test_set)))
 
-            print("Number of Classes: ", net_params['n_classes'])
+        print("Number of Classes: ", net_params['n_classes'])
 
-            t_epoch_train_losses, t_epoch_val_losses,s_epoch_train_losses, s_epoch_val_losses = [], [], [], []
-            t_epoch_train_accs, t_epoch_val_accs, s_epoch_train_accs, s_epoch_val_accs = [], [], [], []
+        t_epoch_train_losses, t_epoch_val_losses,s_epoch_train_losses, s_epoch_val_losses = [], [], [], []
+        t_epoch_train_accs, t_epoch_val_accs, s_epoch_train_accs, s_epoch_val_accs = [], [], [], []
 
-            # Init Target Model
-            t_model = gnn_model(MODEL_NAME, net_params)
-            t_model = t_model.to(device)
-            t_optimizer = optim.Adam(t_model.parameters(), lr=params['init_lr'], weight_decay=params['weight_decay'])
-            t_scheduler = optim.lr_scheduler.ReduceLROnPlateau(t_optimizer, mode='min',
-                                                             factor=params['lr_reduce_factor'],
-                                                             patience=params['lr_schedule_patience'],
-                                                             verbose=True)
-            # Init Shadow Model
-            s_model = gnn_model(MODEL_NAME, net_params)
-            s_model = s_model.to(device)
-            s_optimizer = optim.Adam(s_model.parameters(), lr=params['init_lr'], weight_decay=params['weight_decay'])
-            s_scheduler = optim.lr_scheduler.ReduceLROnPlateau(s_optimizer, mode='min',
-                                                             factor=params['lr_reduce_factor'],
-                                                             patience=params['lr_schedule_patience'],
-                                                             verbose=True)
+        # Init Target Model
+        t_model = gnn_model(MODEL_NAME, net_params)
+        t_model = t_model.to(device)
+        t_optimizer = optim.Adam(t_model.parameters(), lr=params['init_lr'], weight_decay=params['weight_decay'])
+        t_scheduler = optim.lr_scheduler.ReduceLROnPlateau(t_optimizer, mode='min',
+                                                         factor=params['lr_reduce_factor'],
+                                                         patience=params['lr_schedule_patience'],
+                                                         verbose=True)
+        # Init Shadow Model
+        s_model = gnn_model(MODEL_NAME, net_params)
+        s_model = s_model.to(device)
+        s_optimizer = optim.Adam(s_model.parameters(), lr=params['init_lr'],
+                                 weight_decay=params['weight_decay'])
+        s_scheduler = optim.lr_scheduler.ReduceLROnPlateau(s_optimizer, mode='min',
+                                                           factor=params['lr_reduce_factor'],
+                                                           patience=params['lr_schedule_patience'],
+                                                           verbose=True)
+        # Set train, val and test data size
+        train_size = params['train_size']
+        val_size = params['val_size']
+        test_size = params['test_size']
+        print("Train size:{} , Val Size:{} and Test Size：{}".format(train_size,val_size,test_size))
+        # sample defined size of graphs
+        selected_T_train_set, _ = random_split(target_train_set, [train_size, len(target_train_set) - train_size])
+        selected_T_val_set, _ = random_split(target_val_set, [val_size, len(target_val_set) - val_size])
+        selected_T_test_set, _ = random_split(target_test_set, [test_size, len(target_test_set) - test_size])
+        print('Selected Training Size:{}, Validation Size: {} and Testing Size:{}'.format(len(selected_T_train_set),
+                                                                                          len(selected_T_val_set),
+                                                                                          len(selected_T_test_set)))
+        selected_S_train_set, _ = random_split(shadow_train_set, [train_size, len(shadow_train_set) - train_size])
+        selected_S_val_set, _ = random_split(shadow_val_set, [val_size, len(shadow_val_set) - val_size])
+        selected_S_test_set, _ = random_split(shadow_test_set, [test_size, len(shadow_test_set) - test_size])
+        print('Selected Shadow Size:{}, Validation Size: {} and Testing Size:{}'.format(len(selected_S_train_set),
+                                                                                        len(selected_S_val_set),
+                                                                                        len(selected_S_test_set)))
+
+        # batching exception for Diffpool
+        drop_last = True if MODEL_NAME == 'DiffPool' else False
+
+        # import train functions for all other GCNs
+        from train.train_TUs_graph_classification import train_epoch_sparse as train_epoch, \
+            evaluate_network_sparse as evaluate_network
+
+        # Load data
+        target_train_loader = DataLoader(selected_T_train_set, batch_size=params['batch_size'], shuffle=True,
+                                         drop_last=drop_last,
+                                         collate_fn=dataset.collate)
+        target_val_loader = DataLoader(selected_T_val_set, batch_size=params['batch_size'], shuffle=False,
+                                       drop_last=drop_last, collate_fn=dataset.collate)
+        target_test_loader = DataLoader(selected_T_test_set, batch_size=params['batch_size'], shuffle=False,
+                                        drop_last=drop_last, collate_fn=dataset.collate)
+
+        shadow_train_loader = DataLoader(selected_S_train_set, batch_size=params['batch_size'], shuffle=True,
+                                         drop_last=drop_last,
+                                         collate_fn=dataset.collate)
+        shadow_val_loader = DataLoader(selected_S_val_set, batch_size=params['batch_size'], shuffle=False,
+                                       drop_last=drop_last,
+                                       collate_fn=dataset.collate)
+        shadow_test_loader = DataLoader(selected_S_test_set, batch_size=params['batch_size'], shuffle=False,
+                                        drop_last=drop_last,
+                                        collate_fn=dataset.collate)
+
+        print('Start Training Target Model...')
+        t_ckpt_dir, s_ckpt_dir = '', ''
+        with tqdm(range(params['epochs'])) as t:
+            for epoch in t:
+
+                t.set_description('Epoch %d' % epoch)
+
+                start = time.time()
+                # else:   # for all other models common train function
+                t_epoch_train_loss, t_epoch_train_acc, t_optimizer = train_epoch(t_model, t_optimizer, device,
+                                                                                 target_train_loader, epoch)
+
+                t_epoch_val_loss, t_epoch_val_acc = evaluate_network(t_model, device, target_val_loader, epoch)
+                _, t_epoch_test_acc = evaluate_network(t_model, device, target_test_loader, epoch)
+
+                t_epoch_train_losses.append(t_epoch_train_loss)
+                t_epoch_val_losses.append(t_epoch_val_loss)
+                t_epoch_train_accs.append(t_epoch_train_acc)
+                t_epoch_val_accs.append(t_epoch_val_acc)
+
+                writer.add_scalar('train/_loss', t_epoch_train_loss, epoch)
+                writer.add_scalar('val/_loss', t_epoch_val_loss, epoch)
+                writer.add_scalar('train/_acc', t_epoch_train_acc, epoch)
+                writer.add_scalar('val/_acc', t_epoch_val_acc, epoch)
+                writer.add_scalar('test/_acc', t_epoch_test_acc, epoch)
+                writer.add_scalar('learning_rate', t_optimizer.param_groups[0]['lr'], epoch)
+
+                _, t_epoch_test_acc = evaluate_network(t_model, device, target_test_loader, epoch)
+                t.set_postfix(time=time.time()-start, lr=t_optimizer.param_groups[0]['lr'],
+                              train_loss=t_epoch_train_loss, val_loss=t_epoch_val_loss,
+                              train_acc=t_epoch_train_acc, val_acc=t_epoch_val_acc,
+                              test_acc=t_epoch_test_acc)
+
+                per_epoch_time.append(time.time()-start)
+
+                # Saving checkpoint
+                t_ckpt_dir = os.path.join(root_ckpt_dir, "T_RUN_" + str(split_number))
+                if not os.path.exists(t_ckpt_dir):
+                    os.makedirs(t_ckpt_dir)
+                torch.save(t_model.state_dict(), '{}.pkl'.format(t_ckpt_dir + "/epoch_" + str(epoch)))
+
+                files = glob.glob(t_ckpt_dir + '/*.pkl')
+                for file in files:
+                    epoch_nb = file.split('_')[-1]
+                    epoch_nb = int(epoch_nb.split('.')[0])
+                    if epoch_nb < epoch-1:
+                        os.remove(file)
+
+                t_scheduler.step(t_epoch_val_loss)
+
+                if t_optimizer.param_groups[0]['lr'] < params['min_lr']:
+                    print("\n!! LR EQUAL TO MIN LR SET.")
+                    break
+
+                # Stop training after params['max_time'] hours
+                if time.time()-t0_split > params['max_time']*3600/10:       # Dividing max_time by 10, since there are 10 runs in TUs
+                    print('-' * 89)
+                    print("Max_time for one train-val-test split experiment elapsed {:.3f} hours, so stopping".format(params['max_time']/10))
+                    break
 
 
-            # Set train, val and test data size
-            train_size = params['train_size']
-            val_size = params['val_size']
-            test_size = params['test_size']
-            print("Train size:{} , Val Size:{} and Test Size：{}".format(train_size,val_size,test_size))
-            # sample defined size of graphs
-            selected_T_train_set, _ = random_split(target_train_set, [train_size, len(target_train_set) - train_size])
-            selected_T_val_set, _ = random_split(target_val_set, [val_size, len(target_val_set) - val_size])
-            selected_T_test_set, _ = random_split(target_test_set, [test_size, len(target_test_set) - test_size])
-            print('Selected Training Size:{}, Validation Size: {} and Testing Size:{}'.format(len(selected_T_train_set),
-                                                                                              len(selected_T_val_set),
-                                                                                              len(selected_T_test_set)))
-            selected_S_train_set, _ = random_split(shadow_train_set, [train_size, len(shadow_train_set) - train_size])
-            selected_S_val_set, _ = random_split(shadow_val_set, [val_size, len(shadow_val_set) - val_size])
-            selected_S_test_set, _ = random_split(shadow_test_set, [test_size, len(shadow_test_set) - test_size])
-            print('Selected Shadow Size:{}, Validation Size: {} and Testing Size:{}'.format(len(selected_S_train_set),
-                                                                                            len(selected_S_val_set),
-                                                                                            len(selected_S_test_set)))
+        # Start training Shadow Model
+        with tqdm(range(params['epochs'])) as t:
+            for epoch in t:
+                t.set_description('Epoch %d' % epoch)
+                start = time.time()
+                s_epoch_train_loss, s_epoch_train_acc, s_optimizer = train_epoch(s_model, s_optimizer, device,
+                                                                               shadow_train_loader, epoch)
 
-            # batching exception for Diffpool
-            drop_last = True if MODEL_NAME == 'DiffPool' else False
+                s_epoch_val_loss, s_epoch_val_acc = evaluate_network(s_model, device, shadow_val_loader, epoch)
+                _, s_epoch_test_acc = evaluate_network(s_model, device, shadow_test_loader, epoch)
 
-            if MODEL_NAME in ['RingGNN', '3WLGNN']:
-                # import train functions specific for WL-GNNs
-                from train.train_TUs_graph_classification import train_epoch_dense as train_epoch, \
-                    evaluate_network_dense as evaluate_network
-                # Load data
-                target_train_loader = DataLoader(selected_T_train_set, shuffle=True, collate_fn=dataset.collate)
-                target_val_loader = DataLoader(selected_T_val_set, shuffle=False, collate_fn=dataset.collate)
-                target_test_loader = DataLoader(selected_T_test_set, shuffle=False, collate_fn=dataset.collate)
+                s_epoch_train_losses.append(s_epoch_train_loss)
+                s_epoch_val_losses.append(s_epoch_val_loss)
+                s_epoch_train_accs.append(s_epoch_train_acc)
+                s_epoch_val_accs.append(s_epoch_val_acc)
 
-                shadow_train_loader = DataLoader(selected_S_train_set, shuffle=True, collate_fn=dataset.collate)
-                shadow_val_loader = DataLoader(selected_S_val_set, shuffle=False, collate_fn=dataset.collate)
-                shadow_test_loader = DataLoader(selected_S_test_set, shuffle=False, collate_fn=dataset.collate)
+                writer.add_scalar('train/_loss', s_epoch_train_loss, epoch)
+                writer.add_scalar('val/_loss', s_epoch_val_loss, epoch)
+                writer.add_scalar('train/_acc', s_epoch_train_acc, epoch)
+                writer.add_scalar('val/_acc', s_epoch_val_acc, epoch)
+                writer.add_scalar('test/_acc', s_epoch_test_acc, epoch)
+                writer.add_scalar('learning_rate', s_optimizer.param_groups[0]['lr'], epoch)
 
-            else:
-                # import train functions for all other GCNs
-                from train.train_TUs_graph_classification import train_epoch_sparse as train_epoch, \
-                    evaluate_network_sparse as evaluate_network
+                _, s_epoch_test_acc = evaluate_network(s_model, device, shadow_test_loader, epoch)
+                t.set_postfix(time=time.time() - start, lr=s_optimizer.param_groups[0]['lr'],
+                              train_loss=s_epoch_train_loss, val_loss=s_epoch_val_loss,
+                              train_acc=s_epoch_train_acc, val_acc=s_epoch_val_acc,
+                              test_acc=s_epoch_test_acc)
 
-                # Load data
-                target_train_loader = DataLoader(selected_T_train_set, batch_size=params['batch_size'], shuffle=True,
-                                                 drop_last=drop_last,
-                                                 collate_fn=dataset.collate)
-                target_val_loader = DataLoader(selected_T_val_set, batch_size=params['batch_size'], shuffle=False,
-                                               drop_last=drop_last, collate_fn=dataset.collate)
-                target_test_loader = DataLoader(selected_T_test_set, batch_size=params['batch_size'], shuffle=False,
-                                                drop_last=drop_last, collate_fn=dataset.collate)
+                per_epoch_time.append(time.time() - start)
 
-                shadow_train_loader = DataLoader(selected_S_train_set, batch_size=params['batch_size'], shuffle=True,
-                                                 drop_last=drop_last,
-                                                 collate_fn=dataset.collate)
-                shadow_val_loader = DataLoader(selected_S_val_set, batch_size=params['batch_size'], shuffle=False,
-                                               drop_last=drop_last,
-                                               collate_fn=dataset.collate)
-                shadow_test_loader = DataLoader(selected_S_test_set, batch_size=params['batch_size'], shuffle=False,
-                                                drop_last=drop_last,
-                                                collate_fn=dataset.collate)
+                # Saving checkpoint
+                s_ckpt_dir = os.path.join(root_ckpt_dir, "S_RUN_" + str(split_number))
+                if not os.path.exists(s_ckpt_dir):
+                    os.makedirs(s_ckpt_dir)
+                torch.save(s_model.state_dict(), '{}.pkl'.format(s_ckpt_dir + "/epoch_" + str(epoch)))
 
-            print('Start Training Target Model...')
-            with tqdm(range(params['epochs'])) as t:
-                for epoch in t:
+                files = glob.glob(s_ckpt_dir + '/*.pkl')
+                for file in files:
+                    epoch_nb = file.split('_')[-1]
+                    epoch_nb = int(epoch_nb.split('.')[0])
+                    if epoch_nb < epoch - 1:
+                        os.remove(file)
 
-                    t.set_description('Epoch %d' % epoch)    
+                s_scheduler.step(s_epoch_val_loss)
 
-                    start = time.time()
-                    
-                    if MODEL_NAME in ['RingGNN', '3WLGNN']: # since different batch training function for dense GNNs
-                        epoch_train_loss, epoch_train_acc, t_optimizer = train_epoch(t_model, t_optimizer, device,
-                                                                                     target_train_loader,
-                                                                                     epoch, params['batch_size'])
-                    else:   # for all other models common train function
-                        epoch_train_loss, epoch_train_acc, t_optimizer = train_epoch(t_model, t_optimizer, device,
-                                                                                     target_train_loader, epoch)
+                if s_optimizer.param_groups[0]['lr'] < params['min_lr']:
+                    print("\n!! LR EQUAL TO MIN LR SET.")
+                    break
 
-                    epoch_val_loss, epoch_val_acc = evaluate_network(t_model, device, target_val_loader, epoch)
-                    _, epoch_test_acc = evaluate_network(t_model, device, target_test_loader, epoch)
+                # Stop training after params['max_time'] hours
+                if time.time() - t0_split > params[
+                    'max_time'] * 3600 / 10:  # Dividing max_time by 10, since there are 10 runs in TUs
+                    print('-' * 89)
+                    print(
+                        "Max_time for one train-val-test split experiment elapsed {:.3f} hours, so stopping".format(
+                            params['max_time'] / 10))
+                    break
 
-                    t_epoch_train_losses.append(epoch_train_loss)
-                    t_epoch_val_losses.append(epoch_val_loss)
-                    t_epoch_train_accs.append(epoch_train_acc)
-                    t_epoch_val_accs.append(epoch_val_acc)
-
-                    writer.add_scalar('train/_loss', epoch_train_loss, epoch)
-                    writer.add_scalar('val/_loss', epoch_val_loss, epoch)
-                    writer.add_scalar('train/_acc', epoch_train_acc, epoch)
-                    writer.add_scalar('val/_acc', epoch_val_acc, epoch)
-                    writer.add_scalar('test/_acc', epoch_test_acc, epoch)
-                    writer.add_scalar('learning_rate', t_optimizer.param_groups[0]['lr'], epoch)
-
-                    _, epoch_test_acc = evaluate_network(t_model, device, target_test_loader, epoch)
-                    t.set_postfix(time=time.time()-start, lr=t_optimizer.param_groups[0]['lr'],
-                                  train_loss=epoch_train_loss, val_loss=epoch_val_loss,
-                                  train_acc=epoch_train_acc, val_acc=epoch_val_acc,
-                                  test_acc=epoch_test_acc)  
-
-                    per_epoch_time.append(time.time()-start)
-
-                    # Saving checkpoint
-                    ckpt_dir = os.path.join(root_ckpt_dir, "T_RUN_" + str(split_number))
-                    if not os.path.exists(ckpt_dir):
-                        os.makedirs(ckpt_dir)
-                    torch.save(t_model.state_dict(), '{}.pkl'.format(ckpt_dir + "/epoch_" + str(epoch)))
-
-                    files = glob.glob(ckpt_dir + '/*.pkl')
-                    for file in files:
-                        epoch_nb = file.split('_')[-1]
-                        epoch_nb = int(epoch_nb.split('.')[0])
-                        if epoch_nb < epoch-1:
-                            os.remove(file)
-
-                    t_scheduler.step(epoch_val_loss)
-
-                    if t_optimizer.param_groups[0]['lr'] < params['min_lr']:
-                        print("\n!! LR EQUAL TO MIN LR SET.")
-                        break
-                        
-                    # Stop training after params['max_time'] hours
-                    if time.time()-t0_split > params['max_time']*3600/10:       # Dividing max_time by 10, since there are 10 runs in TUs
-                        print('-' * 89)
-                        print("Max_time for one train-val-test split experiment elapsed {:.3f} hours, so stopping".format(params['max_time']/10))
-                        break
-
-            # Start training Shadow Model
-            with tqdm(range(params['epochs'])) as t:
-                for epoch in t:
-
-                    t.set_description('Epoch %d' % epoch)
-
-                    start = time.time()
-
-                    if MODEL_NAME in ['RingGNN', '3WLGNN']:  # since different batch training function for dense GNNs
-                        epoch_train_loss, epoch_train_acc, s_optimizer = train_epoch(s_model, s_optimizer, device,
-                                                                                   shadow_train_loader, epoch,
-                                                                                   params['batch_size'])
-                    else:  # for all other models common train function
-                        epoch_train_loss, epoch_train_acc, s_optimizer = train_epoch(s_model, s_optimizer, device,
-                                                                                   shadow_train_loader, epoch)
-
-                    epoch_val_loss, epoch_val_acc = evaluate_network(s_model, device, shadow_val_loader, epoch)
-                    _, epoch_test_acc = evaluate_network(s_model, device, shadow_test_loader, epoch)
-
-                    s_epoch_train_losses.append(epoch_train_loss)
-                    s_epoch_val_losses.append(epoch_val_loss)
-                    s_epoch_train_accs.append(epoch_train_acc)
-                    s_epoch_val_accs.append(epoch_val_acc)
-
-                    writer.add_scalar('train/_loss', epoch_train_loss, epoch)
-                    writer.add_scalar('val/_loss', epoch_val_loss, epoch)
-                    writer.add_scalar('train/_acc', epoch_train_acc, epoch)
-                    writer.add_scalar('val/_acc', epoch_val_acc, epoch)
-                    writer.add_scalar('test/_acc', epoch_test_acc, epoch)
-                    writer.add_scalar('learning_rate', s_optimizer.param_groups[0]['lr'], epoch)
-
-                    _, epoch_test_acc = evaluate_network(s_model, device, shadow_test_loader, epoch)
-                    t.set_postfix(time=time.time() - start, lr=s_optimizer.param_groups[0]['lr'],
-                                  train_loss=epoch_train_loss, val_loss=epoch_val_loss,
-                                  train_acc=epoch_train_acc, val_acc=epoch_val_acc,
-                                  test_acc=epoch_test_acc)
-
-                    per_epoch_time.append(time.time() - start)
-
-                    # Saving checkpoint
-                    ckpt_dir = os.path.join(root_ckpt_dir, "S_RUN_" + str(split_number))
-                    if not os.path.exists(ckpt_dir):
-                        os.makedirs(ckpt_dir)
-                    torch.save(s_model.state_dict(), '{}.pkl'.format(ckpt_dir + "/epoch_" + str(epoch)))
-
-                    files = glob.glob(ckpt_dir + '/*.pkl')
-                    for file in files:
-                        epoch_nb = file.split('_')[-1]
-                        epoch_nb = int(epoch_nb.split('.')[0])
-                        if epoch_nb < epoch - 1:
-                            os.remove(file)
-
-                    s_scheduler.step(epoch_val_loss)
-
-                    if s_optimizer.param_groups[0]['lr'] < params['min_lr']:
-                        print("\n!! LR EQUAL TO MIN LR SET.")
-                        break
-
-                    # Stop training after params['max_time'] hours
-                    if time.time() - t0_split > params[
-                        'max_time'] * 3600 / 10:  # Dividing max_time by 10, since there are 10 runs in TUs
-                        print('-' * 89)
-                        print(
-                            "Max_time for one train-val-test split experiment elapsed {:.3f} hours, so stopping".format(
-                                params['max_time'] / 10))
-                        break
-
-            _, t_test_acc = evaluate_network(t_model, device, target_test_loader, epoch)
-            _, t_train_acc = evaluate_network(t_model, device, target_train_loader, epoch)
-            t_avg_test_acc.append(t_test_acc)
-            t_avg_train_acc.append(t_train_acc)
-            t_avg_convergence_epochs.append(epoch)
-            print("Target Test Accuracy [LAST EPOCH]: {:.4f}".format(t_test_acc))
-            print("Target Train Accuracy [LAST EPOCH]: {:.4f}".format(t_train_acc))
-            print("Target Convergence Time (Epochs): {:.4f}".format(epoch))
-            _, s_test_acc = evaluate_network(s_model, device, shadow_test_loader, epoch)
-            _, s_train_acc = evaluate_network(s_model, device, shadow_train_loader, epoch)
-            s_avg_test_acc.append(t_test_acc)
-            s_avg_train_acc.append(t_train_acc)
-            s_avg_convergence_epochs.append(epoch)
-            print("Shadow Test Accuracy [LAST EPOCH]: {:.4f}".format(s_test_acc))
-            print("Shadow Train Accuracy [LAST EPOCH]: {:.4f}".format(s_train_acc))
-            print("Shadow Convergence Time (Epochs): {:.4f}".format(epoch))
+        _, t_test_acc = evaluate_network(t_model, device, target_test_loader, '0|T|' + t_ckpt_dir)
+        _, t_train_acc = evaluate_network(t_model, device, target_train_loader, '1|T|' + t_ckpt_dir)
+        t_avg_test_acc.append(t_test_acc)
+        t_avg_train_acc.append(t_train_acc)
+        t_avg_convergence_epochs.append(epoch)
+        print("Target Test Accuracy [LAST EPOCH]: {:.4f}".format(t_test_acc))
+        print("Target Train Accuracy [LAST EPOCH]: {:.4f}".format(t_train_acc))
+        print("Target Convergence Time (Epochs): {:.4f}".format(epoch))
+        _, s_test_acc = evaluate_network(s_model, device, shadow_test_loader, '0|S|' + s_ckpt_dir)
+        _, s_train_acc = evaluate_network(s_model, device, shadow_train_loader, '1|S|' + s_ckpt_dir)
+        s_avg_test_acc.append(t_test_acc)
+        s_avg_train_acc.append(t_train_acc)
+        s_avg_convergence_epochs.append(epoch)
+        print("Shadow Test Accuracy [LAST EPOCH]: {:.4f}".format(s_test_acc))
+        print("Shadow Train Accuracy [LAST EPOCH]: {:.4f}".format(s_train_acc))
+        print("Shadow Convergence Time (Epochs): {:.4f}".format(epoch))
     except KeyboardInterrupt:
         print('-' * 89)
         print('Exiting from training early because of KeyboardInterrupt')

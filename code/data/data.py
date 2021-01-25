@@ -1,9 +1,9 @@
 """
     File to load dataset based on user control from main file
 """
+import torch
 from data.superpixels import SuperPixDataset
 from data.TUs import TUsDataset
-from data.CSL import CSLDataset
 
 
 def LoadData(DATASET_NAME):
@@ -21,9 +21,3 @@ def LoadData(DATASET_NAME):
     TU_DATASETS = ['ENZYMES', 'DD', 'PROTEINS_full']
     if DATASET_NAME in TU_DATASETS: 
         return TUsDataset(DATASET_NAME)
-
-
-    # handling for the CSL (Circular Skip Links) Dataset
-    if DATASET_NAME == 'CSL': 
-        return CSLDataset(DATASET_NAME)
-    

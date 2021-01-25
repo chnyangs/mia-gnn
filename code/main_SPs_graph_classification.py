@@ -171,58 +171,55 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
 
     # batching exception for Diffpool
     drop_last = True if MODEL_NAME == 'DiffPool' else False
-    if MODEL_NAME in ['RingGNN', '3WLGNN']:
-        # import train functions specific for WL-GNNs
-        from train.train_SPs_graph_classification import train_epoch_dense as train_epoch, \
-            evaluate_network_dense as evaluate_network
-        # Load data
-        target_train_loader = DataLoader(selected_T_train_set, shuffle=True,collate_fn=dataset.collate_dense_gnn)
-        target_val_loader = DataLoader(selected_T_val_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
-        target_test_loader = DataLoader(selected_T_test_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
+    # if MODEL_NAME in ['RingGNN', '3WLGNN']:
+    #     # import train functions specific for WL-GNNs
+    #     from train.train_SPs_graph_classification import train_epoch_dense as train_epoch, \
+    #         evaluate_network_dense as evaluate_network
+    #     # Load data
+    #     target_train_loader = DataLoader(selected_T_train_set, shuffle=True,collate_fn=dataset.collate_dense_gnn)
+    #     target_val_loader = DataLoader(selected_T_val_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
+    #     target_test_loader = DataLoader(selected_T_test_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
+    #
+    #     shadow_train_loader = DataLoader(selected_S_train_set,  shuffle=True,collate_fn=dataset.collate_dense_gnn)
+    #     shadow_val_loader = DataLoader(selected_S_val_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
+    #     shadow_test_loader = DataLoader(selected_S_test_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
+    # else:
+    # import train functions for all other GCNs
+    from train.train_SPs_graph_classification import train_epoch_sparse as train_epoch, \
+        evaluate_network_sparse as evaluate_network
+    # Load data
+    target_train_loader = DataLoader(selected_T_train_set, batch_size=params['batch_size'], shuffle=True,
+                                     drop_last=drop_last,
+                                     collate_fn=dataset.collate)
+    target_val_loader = DataLoader(selected_T_val_set, batch_size=params['batch_size'], shuffle=False,
+                                   drop_last=drop_last,collate_fn=dataset.collate)
+    target_test_loader = DataLoader(selected_T_test_set, batch_size=params['batch_size'], shuffle=False,
+                                    drop_last=drop_last,collate_fn=dataset.collate)
 
-        shadow_train_loader = DataLoader(selected_S_train_set,  shuffle=True,collate_fn=dataset.collate_dense_gnn)
-        shadow_val_loader = DataLoader(selected_S_val_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
-        shadow_test_loader = DataLoader(selected_S_test_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
-    else:
-        # import train functions for all other GCNs
-        from train.train_SPs_graph_classification import train_epoch_sparse as train_epoch, \
-            evaluate_network_sparse as evaluate_network
-        # Load data
-        target_train_loader = DataLoader(selected_T_train_set, batch_size=params['batch_size'], shuffle=True,
-                                         drop_last=drop_last,
-                                         collate_fn=dataset.collate)
-        target_val_loader = DataLoader(selected_T_val_set, batch_size=params['batch_size'], shuffle=False,
-                                       drop_last=drop_last,collate_fn=dataset.collate)
-        target_test_loader = DataLoader(selected_T_test_set, batch_size=params['batch_size'], shuffle=False,
-                                        drop_last=drop_last,collate_fn=dataset.collate)
-
-        shadow_train_loader = DataLoader(selected_S_train_set, batch_size=params['batch_size'], shuffle=True,
-                                         drop_last=drop_last,
-                                         collate_fn=dataset.collate)
-        shadow_val_loader = DataLoader(selected_S_val_set, batch_size=params['batch_size'], shuffle=False,
-                                       drop_last=drop_last,
-                                       collate_fn=dataset.collate)
-        shadow_test_loader = DataLoader(selected_S_test_set, batch_size=params['batch_size'], shuffle=False,
-                                        drop_last=drop_last,
-                                        collate_fn=dataset.collate)
+    shadow_train_loader = DataLoader(selected_S_train_set, batch_size=params['batch_size'], shuffle=True,
+                                     drop_last=drop_last,
+                                     collate_fn=dataset.collate)
+    shadow_val_loader = DataLoader(selected_S_val_set, batch_size=params['batch_size'], shuffle=False,
+                                   drop_last=drop_last,
+                                   collate_fn=dataset.collate)
+    shadow_test_loader = DataLoader(selected_S_test_set, batch_size=params['batch_size'], shuffle=False,
+                                    drop_last=drop_last,
+                                    collate_fn=dataset.collate)
 
     # At any point you can hit Ctrl + C to break out of training early.
     print("==============Start Training Target Model==============")
+    print("root_ckpt_dir：",root_ckpt_dir)
+    t_ckpt_dir = ''
+    s_ckpt_dir = ''
     try:
         with tqdm(range(params['epochs'])) as t:
             for epoch in t:
                 t.set_description('Epoch %d' % epoch)
                 start = time.time()
-                if MODEL_NAME in ['RingGNN', '3WLGNN']: # since different batch training function for dense GNNs
-                    epoch_train_loss, epoch_train_acc, t_optimizer = train_epoch(t_model,
-                                                                                 t_optimizer, device,
-                                                                                 target_train_loader,
-                                                                                 epoch, params['batch_size'])
-                else:   # for all other models common train function
-                    epoch_train_loss, epoch_train_acc, t_optimizer = train_epoch(t_model,
-                                                                                 t_optimizer,
-                                                                                 device,
-                                                                                 target_train_loader, epoch)
+                epoch_train_loss, epoch_train_acc, t_optimizer = train_epoch(t_model,
+                                                                             t_optimizer,
+                                                                             device,
+                                                                             target_train_loader, epoch)
                 epoch_val_loss, epoch_val_acc = evaluate_network(t_model, device, target_val_loader, epoch)
                 _, epoch_test_acc = evaluate_network(t_model, device, target_test_loader, epoch)
 
@@ -247,12 +244,12 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
                 per_epoch_time.append(time.time( ) -start)
 
                 # Saving checkpoint
-                ckpt_dir = os.path.join(root_ckpt_dir, "T_RUN_")
-                if not os.path.exists(ckpt_dir):
-                    os.makedirs(ckpt_dir)
-                torch.save(t_model.state_dict(), '{}.pkl'.format(ckpt_dir + "/epoch_" + str(epoch)))
+                t_ckpt_dir = os.path.join(root_ckpt_dir, "T_RUN_")
+                if not os.path.exists(t_ckpt_dir):
+                    os.makedirs(t_ckpt_dir)
+                torch.save(t_model.state_dict(), '{}.pkl'.format(t_ckpt_dir + "/epoch_" + str(epoch)))
 
-                files = glob.glob(ckpt_dir + '/*.pkl')
+                files = glob.glob(t_ckpt_dir + '/*.pkl')
                 for file in files:
                     epoch_nb = file.split('_')[-1]
                     epoch_nb = int(epoch_nb.split('.')[0])
@@ -305,12 +302,12 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
                 per_epoch_time.append(time.time() - start)
 
                 # Saving checkpoint
-                ckpt_dir = os.path.join(root_ckpt_dir, "S_RUN_")
-                if not os.path.exists(ckpt_dir):
-                    os.makedirs(ckpt_dir)
-                torch.save(s_model.state_dict(), '{}.pkl'.format(ckpt_dir + "/epoch_" + str(epoch)))
+                s_ckpt_dir = os.path.join(root_ckpt_dir, "S_RUN_")
+                if not os.path.exists(s_ckpt_dir):
+                    os.makedirs(s_ckpt_dir)
+                torch.save(s_model.state_dict(), '{}.pkl'.format(s_ckpt_dir + "/epoch_" + str(epoch)))
 
-                files = glob.glob(ckpt_dir + '/*.pkl')
+                files = glob.glob(s_ckpt_dir + '/*.pkl')
                 for file in files:
                     epoch_nb = file.split('_')[-1]
                     epoch_nb = int(epoch_nb.split('.')[0])
@@ -333,16 +330,16 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
         print('Exiting from training early because of KeyboardInterrupt')
 
     print("=================Evaluate Target Model Start=================")
-    _, t_test_acc = evaluate_network(t_model, device, target_test_loader, epoch)
-    _, t_train_acc = evaluate_network(t_model, device, target_train_loader, epoch)
+    _, t_test_acc = evaluate_network(t_model, device, target_test_loader, '0|T|' + t_ckpt_dir)
+    _, t_train_acc = evaluate_network(t_model, device, target_train_loader, '1|T|' + t_ckpt_dir)
     print("Target Test Accuracy: {:.4f}".format(t_test_acc))
     print("Target Train Accuracy: {:.4f}".format(t_train_acc))
     print("Target Convergence Time (Epochs): {:.4f}".format(epoch))
     print("TargetTOTAL TIME TAKEN: {:.4f}s".format(time.time() - t0))
     print("Target AVG TIME PER EPOCH: {:.4f}s".format(np.mean(per_epoch_time)))
     print("=================Evaluate Shadow Model Start=================")
-    _, s_test_acc = evaluate_network(s_model, device, shadow_test_loader, epoch)
-    _, s_train_acc = evaluate_network(s_model, device, shadow_train_loader, epoch)
+    _, s_test_acc = evaluate_network(s_model, device, shadow_test_loader, '0|S|' + s_ckpt_dir)
+    _, s_train_acc = evaluate_network(s_model, device, shadow_train_loader, '1|S|' + s_ckpt_dir)
     print("Shadow Test Accuracy: {:.4f}".format(s_test_acc))
     print("Shadow Train Accuracy: {:.4f}".format(s_train_acc))
     print("Shadow Convergence Time (Epochs): {:.4f}".format(epoch))
@@ -535,7 +532,6 @@ def main():
     write_config_file = out_dir + 'configs/config_' + MODEL_NAME + "_" + DATASET_NAME + "_GPU" + str \
         (config['gpu']['id']) + "_" + time.strftime('%Hh%Mm%Ss_on_%b_%d_%Y')
     dirs = root_log_dir, root_ckpt_dir, write_file_name, write_config_file
-
     if not os.path.exists(out_dir + 'results'):
         os.makedirs(out_dir + 'results')
 

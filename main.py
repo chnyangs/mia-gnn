@@ -20,3 +20,4 @@ if __name__ == '__main__':
     # print("exp params:{}".format(exp))
 
     print(1001 // 2)
+    print(type("s") is str)

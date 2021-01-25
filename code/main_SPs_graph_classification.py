@@ -143,8 +143,6 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
     t_epoch_train_losses, t_epoch_val_losses, s_epoch_train_losses, s_epoch_val_losses = [], [], [], []
     t_epoch_train_accs, t_epoch_val_accs, s_epoch_train_accs, s_epoch_val_accs = [], [], [], []
 
-
-
     # split dataset into half: target & shadow
     target_train_set, shadow_train_set = random_split(trainset, [len(trainset) // 2, len(trainset) - len(trainset) // 2])
     target_val_set, shadow_val_set = random_split(valset, [len(valset) // 2, len(valset) - len(valset) // 2])
@@ -171,19 +169,7 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
 
     # batching exception for Diffpool
     drop_last = True if MODEL_NAME == 'DiffPool' else False
-    # if MODEL_NAME in ['RingGNN', '3WLGNN']:
-    #     # import train functions specific for WL-GNNs
-    #     from train.train_SPs_graph_classification import train_epoch_dense as train_epoch, \
-    #         evaluate_network_dense as evaluate_network
-    #     # Load data
-    #     target_train_loader = DataLoader(selected_T_train_set, shuffle=True,collate_fn=dataset.collate_dense_gnn)
-    #     target_val_loader = DataLoader(selected_T_val_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
-    #     target_test_loader = DataLoader(selected_T_test_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
-    #
-    #     shadow_train_loader = DataLoader(selected_S_train_set,  shuffle=True,collate_fn=dataset.collate_dense_gnn)
-    #     shadow_val_loader = DataLoader(selected_S_val_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
-    #     shadow_test_loader = DataLoader(selected_S_test_set, shuffle=False,collate_fn=dataset.collate_dense_gnn)
-    # else:
+
     # import train functions for all other GCNs
     from train.train_SPs_graph_classification import train_epoch_sparse as train_epoch, \
         evaluate_network_sparse as evaluate_network
@@ -209,8 +195,7 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
     # At any point you can hit Ctrl + C to break out of training early.
     print("==============Start Training Target Model==============")
     print("root_ckpt_dir：",root_ckpt_dir)
-    t_ckpt_dir = ''
-    s_ckpt_dir = ''
+    t_ckpt_dir, s_ckpt_dir = '',''
     try:
         with tqdm(range(params['epochs'])) as t:
             for epoch in t:

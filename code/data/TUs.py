@@ -21,6 +21,23 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 import csv
 
 
+def format_dataset(dataset):
+    """
+        Utility function to recover data,
+        INTO-> dgl/pytorch compatible format
+    """
+    graphs = [data[0] for data in dataset]
+    labels = [data[1] for data in dataset]
+
+    for graph in graphs:
+        #graph.ndata['feat'] = torch.FloatTensor(graph.ndata['feat'])
+        graph.ndata['feat'] = graph.ndata['feat'].float() # dgl 4.0
+        # adding edge features for Residual Gated ConvNet, if not there
+        if 'feat' not in graph.edata.keys():
+            edge_feat_dim = graph.ndata['feat'].shape[1] # dim same as node feature dim
+            graph.edata['feat'] = torch.ones(graph.number_of_edges(), edge_feat_dim)
+
+    return DGLFormDataset(graphs, labels)
 
 
 def get_all_split_idx(dataset):
@@ -87,6 +104,7 @@ def get_all_split_idx(dataset):
             all_idx[section] = [list(map(int, idx)) for idx in reader]
     return all_idx
 
+
 class DGLFormDataset(torch.utils.data.Dataset):
     """
         DGLFormDataset wrapping graph list and label list as per pytorch Dataset.
@@ -146,7 +164,7 @@ class TUsDataset(torch.utils.data.Dataset):
         if self.name == "FRANKENSTEIN":
             dataset.graph_labels = np.array([1 if x==2 else x for x in dataset.graph_labels])
 
-        print("[!] Dataset: ", self.name)
+        print("[!!] Dataset: ", self.name)
 
         # this function splits data into train/val/test and returns the indices
         self.all_idx = get_all_split_idx(dataset)

@@ -87,9 +87,9 @@ def apply_attack(epochs, attack_base_path, target_base_path, attack_times):
 
 
 if __name__ == '__main__':
-    target_path = 'out/superpixels_graph_classification/checkpoints/GCN_CIFAR10_GPU1_21h02m43s_on_Jan_25_2021/T_RUN_/'
-    attack_path = 'out/superpixels_graph_classification/checkpoints/GCN_CIFAR10_GPU1_21h02m43s_on_Jan_25_2021/S_RUN_/'
-    # target_path = 'out/TUs_graph_classification/checkpoints/GraphSage_DD_GPU1_23h15m42s_on_Jan_25_2021/T_RUN_/'
-    # attack_path = 'out/TUs_graph_classification/checkpoints/GraphSage_DD_GPU1_23h15m42s_on_Jan_25_2021/S_RUN_/'
+    # target_path = 'out/superpixels_graph_classification/checkpoints/GCN_CIFAR10_GPU1_21h02m43s_on_Jan_25_2021/T_RUN_/'
+    # attack_path = 'out/superpixels_graph_classification/checkpoints/GCN_CIFAR10_GPU1_21h02m43s_on_Jan_25_2021/S_RUN_/'
+    target_path = 'out/TUs_graph_classification/checkpoints/GraphSage_PROTEINS_full_GPU1_01h46m13s_on_Jan_26_2021/T_RUN_/'
+    attack_path = 'out/TUs_graph_classification/checkpoints/GraphSage_PROTEINS_full_GPU1_01h46m13s_on_Jan_26_2021/S_RUN_/'
 
-    apply_attack(epochs=100,attack_base_path=attack_path, target_base_path=target_path, attack_times=15)
+    apply_attack(epochs=300,attack_base_path=attack_path, target_base_path=target_path, attack_times=15)

@@ -13,7 +13,7 @@
         "seed": 41,
         "epochs": 1000,
         "batch_size": 20,
-        "train_size": 140,
+        "train_size": 440,
         "val_size": 55,
         "test_size": 55,
         "init_lr": 7e-5,

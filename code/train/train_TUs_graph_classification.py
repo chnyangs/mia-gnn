@@ -22,7 +22,6 @@ def train_epoch_sparse(model, optimizer, device, data_loader, epoch):
     epoch_train_acc = 0
     nb_data = 0
     gpu_mem = 0
-    count = 0
     for iter, (batch_graphs, batch_labels) in enumerate(data_loader):
         batch_x = batch_graphs.ndata['feat'].to(device)  # num x feat
         batch_e = batch_graphs.edata['feat'].to(device)
@@ -36,8 +35,7 @@ def train_epoch_sparse(model, optimizer, device, data_loader, epoch):
         epoch_loss += loss.detach().item()
         epoch_train_acc += accuracy(batch_scores, batch_labels)
         nb_data += batch_labels.size(0)
-        count = iter
-    epoch_loss /= (count + 1)
+    epoch_loss /= (iter + 1)
     epoch_train_acc /= nb_data
 
     return epoch_loss, epoch_train_acc, optimizer

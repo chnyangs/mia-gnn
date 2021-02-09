@@ -1,5 +1,6 @@
 # MIA GNN Project Starter
 
+
 <pre>
 pip install --upgrade https://github.com/Lasagne/Lasagne/archive/master.zip
 </pre>
@@ -12,4 +13,11 @@ Script execution example:
 
 
 ## Project Structure
-    
+
+
+# Acknowledge
+
+This project references from [benchmarking-gnn](https://github.com/graphdeeplearning/benchmarking-gnns) and 
+[DeeperGCN](https://github.com/lightaime/deep_gcns_torch)
+
+If it has any issues, please let me know.

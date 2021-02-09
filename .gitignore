@@ -12,5 +12,6 @@ out
 *.pt
 
 data
-metrics
+
 results
+

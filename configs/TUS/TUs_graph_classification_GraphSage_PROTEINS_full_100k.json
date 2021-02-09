@@ -7,15 +7,15 @@
     "model": "GraphSage",
     "dataset": "PROTEINS_full",
     
-    "out_dir": "out/TUs_graph_classification/",
+    "out_dir": "results/TUs_graph_classification/",
     
     "params": {
         "seed": 41,
         "epochs": 1000,
         "batch_size": 20,
-        "train_size": 440,
-        "val_size": 55,
-        "test_size": 55,
+        "train_size": 110,
+        "val_size": 110,
+        "test_size": 110,
         "init_lr": 7e-5,
         "lr_reduce_factor": 0.5,
         "lr_schedule_patience": 2000,

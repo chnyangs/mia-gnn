@@ -73,6 +73,7 @@ def load_pickled_data(path):
 def select_top_k(data, top=3):
     arr = []
     for d in data:
-        top_k_idx = d.argsort()[::-1][0:top]
-        arr.append(d[top_k_idx])
+        top_k_idx = d.numpy().argsort()[::-1][0:top]
+        # print(d.numpy()[top_k_idx])
+        arr.append(d.numpy()[top_k_idx])
     return np.array(arr)

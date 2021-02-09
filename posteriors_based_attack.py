@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn as nn
 from sklearn.metrics import classification_report,precision_recall_fscore_support
@@ -17,13 +19,13 @@ def apply_attack(epochs, attack_base_path, target_base_path, attack_times):
     S_y_train_in = load_pickled_data(attack_base_path + 'S_y_train_Label_1.pickle')
     S_X_train_out = load_pickled_data(attack_base_path + 'S_X_train_Label_0.pickle')
     S_y_train_out = load_pickled_data(attack_base_path + 'S_y_train_Label_0.pickle')
-
+    print("S_X_train_in Size:{} and S_X_train_out Size:{}".format(len(S_X_train_in),len(S_X_train_out)))
     # Target Dataset used as Attack Evaluation Dataset
     T_X_train_in = load_pickled_data(target_base_path + 'T_X_train_Label_1.pickle')
     T_y_train_in = load_pickled_data(target_base_path + 'T_y_train_Label_1.pickle')
     T_X_train_out = load_pickled_data(target_base_path + 'T_X_train_Label_0.pickle')
     T_y_train_out = load_pickled_data(target_base_path + 'T_y_train_Label_0.pickle')
-
+    print("T_X_train_in Size:{} and T_X_train_out Size:{}".format(len(T_X_train_in),len(T_X_train_out)))
     # Prepare Dataset
     X_attack = torch.FloatTensor(np.concatenate((S_X_train_in, S_X_train_out), axis=0))
     y_target = torch.FloatTensor(np.concatenate((T_y_train_in, T_y_train_out), axis=0))
@@ -52,8 +54,8 @@ def apply_attack(epochs, attack_base_path, target_base_path, attack_times):
                 attack_optimizer.step()
                 epoch_loss += loss.item()
                 epoch_acc += acc.item()
-            print(f'Epoch {i + 0:03}: | Loss: {epoch_loss / len(attack_train_loader):.5f} |'
-                  f' Acc: {epoch_acc / len(attack_train_loader):.3f}')
+            # print(f'Epoch {i + 0:03}: | Loss: {epoch_loss / len(attack_train_loader):.5f} |'
+            #       f' Acc: {epoch_acc / len(attack_train_loader):.3f}')
 
         # Load Target Evaluation Data
         target_evaluate_data = testData(X_target)
@@ -62,7 +64,7 @@ def apply_attack(epochs, attack_base_path, target_base_path, attack_times):
 
         y_pred_list = []
         attack_model.eval()
-        print("Attack {}.".format(attack))
+        # print("Attack {}.".format(attack))
         with torch.no_grad():
             for X_batch in target_evaluate_loader:
                 y_test_pred = attack_model(X_batch)
@@ -89,7 +91,17 @@ def apply_attack(epochs, attack_base_path, target_base_path, attack_times):
 if __name__ == '__main__':
     # target_path = 'out/superpixels_graph_classification/checkpoints/GCN_CIFAR10_GPU1_21h02m43s_on_Jan_25_2021/T_RUN_/'
     # attack_path = 'out/superpixels_graph_classification/checkpoints/GCN_CIFAR10_GPU1_21h02m43s_on_Jan_25_2021/S_RUN_/'
-    target_path = 'out/TUs_graph_classification/checkpoints/GraphSage_PROTEINS_full_GPU1_01h46m13s_on_Jan_26_2021/T_RUN_/'
-    attack_path = 'out/TUs_graph_classification/checkpoints/GraphSage_PROTEINS_full_GPU1_01h46m13s_on_Jan_26_2021/S_RUN_/'
-
-    apply_attack(epochs=300,attack_base_path=attack_path, target_base_path=target_path, attack_times=15)
+    result_path = 'results/TUs_graph_classification/checkpoints/'
+    folders = os.listdir(result_path)
+    sorted(folders)
+    models = ['GCN','GIN','GAT','GatedGCN','MLP']
+    for folder in folders:
+        if folder.startswith('GCN_DD'):
+            target_path = result_path + folder + '/T_RUN_/'
+            attack_path = result_path + folder + '/S_RUN_/'
+            print(target_path)
+            files = os.listdir(target_path)
+            model_name = [f for f in files if f.startswith('epoch')][0]
+            epoch = int(model_name.split('.')[0].split('_')[1]) + 1
+            print(epoch,target_path)
+            apply_attack(epochs=300,attack_base_path=attack_path, target_base_path=target_path, attack_times=15)

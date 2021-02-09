@@ -10,3 +10,7 @@ out
 *.zip
 
 *.pt
+
+data
+metrics
+results

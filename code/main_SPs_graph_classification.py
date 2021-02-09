@@ -142,6 +142,20 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
                                                        verbose=True)
     t_epoch_train_losses, t_epoch_val_losses, s_epoch_train_losses, s_epoch_val_losses = [], [], [], []
     t_epoch_train_accs, t_epoch_val_accs, s_epoch_train_accs, s_epoch_val_accs = [], [], [], []
+    # Set train, val and test data size
+    train_size = params['train_size']
+    val_size = params['val_size']
+    test_size = params['test_size']
+    # Load Train, Val and Test Dataset
+    print("Size of Trainset:{}, Valset:{}, Testset:{}".format(len(trainset), len(valset), len(testset)))
+    print("Needed Train size:{} , Val Size:{} and Test Size：{}".format(train_size, val_size, test_size))
+    # In order to flexible manage the size of Train, Val, Test data,
+    # Here we resize the size
+    # dataset_all = trainset + testset + valset
+    # trainset, valset, testset = random_split(dataset_all,
+    #                                          [len(dataset_all) - val_size * 2 - test_size * 2, val_size * 2,
+    #                                           test_size * 2])
+    # print("Adjust Size:", len(trainset), len(valset), len(testset))
 
     # split dataset into half: target & shadow
     target_train_set, shadow_train_set = random_split(trainset, [len(trainset) // 2, len(trainset) - len(trainset) // 2])
@@ -149,10 +163,7 @@ def train_val_pipeline(MODEL_NAME, dataset, params, net_params, dirs):
     target_test_set, shadow_test_set = random_split(testset, [len(testset) // 2, len(testset) - len(testset) // 2])
     print("target_train_set and shadow_train_set size are:{} and {}".format(len(target_train_set), len(shadow_train_set)))
 
-    # Set train, val and test data size
-    train_size = params['train_size']
-    val_size = params['val_size']
-    test_size = params['test_size']
+
     # sample defined size of graphs
     selected_T_train_set, _ = random_split(target_train_set, [train_size, len(target_train_set) - train_size])
     selected_T_val_set, _ = random_split(target_val_set, [val_size, len(target_val_set) - val_size])

@@ -42,14 +42,6 @@ class MLPNet(nn.Module):
             h = torch.sigmoid(self.gates(h)) * h
             g.ndata['h'] = h       
             hg = dgl.sum_nodes(g, 'h')
-            # hg = torch.cat(
-            #     (
-            #         dgl.sum_nodes(g, 'h'),
-            #         dgl.max_nodes(g, 'h')
-            #     ),
-            #     dim=1
-            # )
-        
         else:
             g.ndata['h'] = h
             hg = dgl.mean_nodes(g, 'h')

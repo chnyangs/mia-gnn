@@ -21,23 +21,23 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 import csv
 
 
-def format_dataset(dataset):
-    """
-        Utility function to recover data,
-        INTO-> dgl/pytorch compatible format
-    """
-    graphs = [data[0] for data in dataset]
-    labels = [data[1] for data in dataset]
-
-    for graph in graphs:
-        #graph.ndata['feat'] = torch.FloatTensor(graph.ndata['feat'])
-        graph.ndata['feat'] = graph.ndata['feat'].float() # dgl 4.0
-        # adding edge features for Residual Gated ConvNet, if not there
-        if 'feat' not in graph.edata.keys():
-            edge_feat_dim = graph.ndata['feat'].shape[1] # dim same as node feature dim
-            graph.edata['feat'] = torch.ones(graph.number_of_edges(), edge_feat_dim)
-
-    return DGLFormDataset(graphs, labels)
+# def format_dataset(dataset):
+#     """
+#         Utility function to recover data,
+#         INTO-> dgl/pytorch compatible format
+#     """
+#     graphs = [data[0] for data in dataset]
+#     labels = [data[1] for data in dataset]
+#
+#     for graph in graphs:
+#         #graph.ndata['feat'] = torch.FloatTensor(graph.ndata['feat'])
+#         graph.ndata['feat'] = graph.ndata['feat'].float() # dgl 4.0
+#         # adding edge features for Residual Gated ConvNet, if not there
+#         if 'feat' not in graph.edata.keys():
+#             edge_feat_dim = graph.ndata['feat'].shape[1] # dim same as node feature dim
+#             graph.edata['feat'] = torch.ones(graph.number_of_edges(), edge_feat_dim)
+#
+#     return DGLFormDataset(graphs, labels)
 
 
 def get_all_split_idx(dataset):
@@ -49,6 +49,7 @@ def get_all_split_idx(dataset):
         - As with KFold, each of the 10 fold have unique test set.
     """
     root_idx_dir = './code/data/TUs/'
+    # root_idx_dir = './data/TUs/'
     if not os.path.exists(root_idx_dir):
         os.makedirs(root_idx_dir)
     all_idx = {}
@@ -76,7 +77,7 @@ def get_all_split_idx(dataset):
             # Gets final 'train' and 'val'
             train, val, _, __ = train_test_split(remain_set,
                                                     range(len(remain_set.graph_lists)),
-                                                    test_size=0.111,
+                                                    test_size=0.3333,
                                                     stratify=remain_set.graph_labels)
 
             train, val = format_dataset(train), format_dataset(val)

@@ -132,9 +132,24 @@ def train_val_pipeline(MODEL_NAME, DATASET_NAME, params, net_params, dirs):
     t_epoch_train_losses, t_epoch_val_losses, t_epoch_train_accs, t_epoch_val_accs = [], [], [], []
     s_epoch_train_losses, s_epoch_val_losses, s_epoch_train_accs, s_epoch_val_accs = [], [], [], []
 
+
+    # Set train, val and test data size
+    train_size = params['train_size']
+    val_size = params['val_size']
+    test_size = params['test_size']
     # Load Train, Val and Test Dataset
     trainset, valset, testset = dataset.train[split_number], dataset.val[split_number], dataset.test[split_number]
     print("Size of Trainset:{}, Valset:{}, Testset:{}".format(len(trainset), len(valset), len(testset)))
+    print("Needed Train size:{} , Val Size:{} and Test Size：{}".format(train_size, val_size, test_size))
+
+    # In order to flexible manage the size of Train, Val, Test data,
+    # Here we resize the size
+    dataset_all = trainset + testset + valset
+    trainset, valset, testset = random_split(dataset_all,
+                                                      [len(dataset_all) - val_size * 2 - test_size * 2, val_size * 2,
+                                                       test_size * 2])
+    print("Adjust Size:", len(trainset), len(valset), len(testset))
+
     # Split Data into Target and Shadow
     target_train_set, shadow_train_set = random_split(trainset,[len(trainset) // 2, len(trainset) - len(trainset) // 2])
     target_val_set, shadow_val_set = random_split(valset, [len(valset) // 2, len(valset) - len(valset) // 2])
@@ -147,12 +162,7 @@ def train_val_pipeline(MODEL_NAME, DATASET_NAME, params, net_params, dirs):
     print("Target Test set with size:{} and Shadow Test set with size:{}".format(len(target_test_set),
                                                                                  len(shadow_test_set)))
 
-    # Set train, val and test data size
-    train_size = params['train_size']
-    val_size = params['val_size']
-    test_size = params['test_size']
-    print("Train size:{} , Val Size:{} and Test Size：{}".format(train_size, val_size, test_size))
-    # sample defined size of graphs
+     # sample defined size of graphs
     selected_T_train_set, _ = random_split(target_train_set, [train_size, len(target_train_set) - train_size])
     selected_T_val_set, _ = random_split(target_val_set, [val_size, len(target_val_set) - val_size])
     selected_T_test_set, _ = random_split(target_test_set, [test_size, len(target_test_set) - test_size])

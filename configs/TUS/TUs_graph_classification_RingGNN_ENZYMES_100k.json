@@ -12,9 +12,9 @@
     "params": {
         "seed": 41,
         "epochs": 1000,
-        "train_size": 240,
-        "val_size": 30,
-        "test_size": 30,
+        "train_size": 100,
+        "val_size": 100,
+        "test_size": 100,
         "batch_size": 4,
         "init_lr": 1e-4,
         "lr_reduce_factor": 0.5,

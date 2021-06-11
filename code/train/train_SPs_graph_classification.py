@@ -5,6 +5,7 @@
 import os
 import pickle
 
+import dgl
 import torch
 import torch.nn as nn
 import math
@@ -49,6 +50,8 @@ def evaluate_network_sparse(model, device, data_loader, epoch):
     train_posterior = []
     train_labels = []
     flag = []
+    num_nodes, num_edges = [],[]
+
     if type(epoch) is str:
         flag = epoch.split('|')
     with torch.no_grad():
@@ -59,6 +62,10 @@ def evaluate_network_sparse(model, device, data_loader, epoch):
             batch_scores = model.forward(batch_graphs, batch_x, batch_e)
             # Calculate Posteriors
             if len(flag) == 3:
+                graphs = dgl.unbatch(batch_graphs)
+                for graph in graphs:
+                    num_nodes.append(graph.number_of_nodes())
+                    num_edges.append(graph.number_of_edges())
                 for posterior in F.softmax(batch_scores, dim=1).detach().cpu().numpy().tolist():
                     train_posterior.append(posterior)
                     train_labels.append(int(flag[0]))
@@ -73,9 +80,13 @@ def evaluate_network_sparse(model, device, data_loader, epoch):
         if len(flag) == 3:
             x_save_path = flag[2] + '/' + flag[1] + '_X_train_Label_' + str(flag[0]) + '.pickle'
             y_save_path = flag[2] + '/' + flag[1] + '_y_train_Label_' + str(flag[0]) + '.pickle'
+            num_node_save_path = flag[2] + '/' + flag[1] + '_num_node_' + str(flag[0]) + '.pickle'
+            num_edge_save_path = flag[2] + '/' + flag[1] + '_num_edge_' + str(flag[0]) + '.pickle'
             print("save_path:",x_save_path,y_save_path)
             pickle.dump(np.array(train_posterior), open(x_save_path, 'wb'))
             pickle.dump(np.array(train_labels), open(y_save_path, 'wb'))
+            pickle.dump(np.array(num_nodes), open(num_node_save_path, 'wb'))
+            pickle.dump(np.array(num_edges), open(num_edge_save_path, 'wb'))
     return epoch_test_loss, epoch_test_acc
 
 
